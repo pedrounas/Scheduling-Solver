@@ -15,10 +15,14 @@ get_data(Tarefas,Precedencias,D,T) :-
     findall(D,tarefa(_,_,D,_),Duracao),
     findall(W,tarefa(_,_,_,W),Trabalhadores),
     length(Tarefas,NTarefas), length(DatasInicio,NTarefas),
-    duracao_total(Tarefas,MaxW),
-    DatasInicio#::0..MaxW, Fim#::0..MaxW,
+    duracao_total(Tarefas,MaxD),
+    write('Duração mínima do projeto: '), writeln(MaxD),
+    writeln(''),
+    DatasInicio#::0..MaxD, Fim#::0..MaxD,
     get_succ(Tarefas,DatasInicio,Fim),
-    (foreach(X,Tarefas),foreach(Y,DatasInicio) do writeln(X:Y)).
+    (foreach(X,Tarefas),foreach(Y,DatasInicio) do write('Tarefa : '), write(X), write(' Data de Início: '), writeln(Y)),
+    writeln(''),
+    max_workers(Tarefas,0).
     
 get_succ([],_,_).
 get_succ([T|RTarefas],Datas,Fim) :-
@@ -40,23 +44,15 @@ duracao_total([T|RTarefas], Total) :-
     tarefa(T,_,Di,_), 
     duracao_total(RTarefas,Total_), Total is Total_ + Di.
 
+max_workers([],Max) :- write('Número mínimo de trabalhadores: '), writeln(Max).
+max_workers([T|RTarefas], Max) :-
+    tarefa(T,_,_,W),
+    Result is max(W,Max),
+    max_workers(RTarefas,Result).
+
+
 selec_elemento(T,T,[I|_],I) :- !.
 selec_elemento(T0,T,[_|R],I) :-  T0n is T0+1, selec_elemento(T0n,T,R,I).
-
-/*get_succ([],_).
-get_succ([T|RTarefas],DataI) :-
-    tarefa(T,Succs,Di,_),
-    get_succ_(T,Succs,Di,DataI),
-    Res is DataI + Di,
-    get_succ(RTarefas, Res).
-
-get_succ_([],_,_,_).
-get_succ_(T,[],Di,DataI) :-
-    writeln(T:[]:Di:DataI).
-get_succ_(T,[S|RS],Di,DataI) :-
-    writeln(T:S:Di:DataI),
-    Res is DataI + Di,
-    get_succ_(T,RS,Di,Res).*/
 
 /*print_workers([]).
 print_workers([Trabalhadores|RTrabalhadores]) :-
