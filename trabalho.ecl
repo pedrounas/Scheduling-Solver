@@ -4,6 +4,16 @@
 
 :- compile(base_dados).
 
+/*
+Para o Eclipse dar
+export PATH=${PATH}:/home/unas/Aulas/TerceiroAno/Métodos\ de\ Apoio\ á\ Decisão/bin/x86_64_linux
+*/
+
+/*
+TODO:
+ - Aguentar quando 2 tarefas não têm precedentes?
+/*
+
 /* tarefa(ID,Precs,Duracao,Trabalhadores) - EclipseCPL
    t(ID,Duracao,Precs) - SWIPL */
 
@@ -20,7 +30,8 @@ get_data(Tarefas,Precedencias,D,T) :-
     writeln(''),
     DatasInicio#::0..MaxD, Fim#::0..MaxD,
     get_succ(Tarefas,DatasInicio,Fim),
-    (foreach(X,Tarefas),foreach(Y,DatasInicio) do write('Tarefa : '), write(X), write(' Data de Início: '), writeln(Y)),
+    minimize(labeling([Fim]),Fim),
+    escrever_tarefas(Tarefas,DatasInicio),
     writeln(''),
     max_workers(Tarefas,0).
     
@@ -30,7 +41,7 @@ get_succ([T|RTarefas],Datas,Fim) :-
     selec_elemento(1,T,Datas,DataI),
     get_succ_(Segs,Datas,DataI,Di),
     DataI+Di #=< Fim,
-    get_succ(Segs,Datas,Fim).
+    get_succ(RTarefas,Datas,Fim).
 
 get_succ_([],_,_,_).
 get_succ_([J|PSegs],Datas,DataI,Di) :-
@@ -54,8 +65,8 @@ max_workers([T|RTarefas], Max) :-
 selec_elemento(T,T,[I|_],I) :- !.
 selec_elemento(T0,T,[_|R],I) :-  T0n is T0+1, selec_elemento(T0n,T,R,I).
 
-/*print_workers([]).
-print_workers([Trabalhadores|RTrabalhadores]) :-
-    writeln(Trabalhadores),
-    print_workers(RTrabalhadores).*/
+escrever_tarefas([],[]).
+escrever_tarefas([I|RTarefas], [Xi|RX]) :-
+    write(I:Xi), nl,
+    escrever_tarefas(RTarefas,RX).
 
