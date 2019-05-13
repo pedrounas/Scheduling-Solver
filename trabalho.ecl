@@ -2,7 +2,7 @@
 :- lib(ic_global).
 :- lib(branch_and_bound).
 
-:- compile(base_dados).
+:- compile(ex2_1).
 
 /*
 Para o Eclipse dar
@@ -67,6 +67,7 @@ selec_elemento(T0,T,[_|R],I) :-  T0n is T0+1, selec_elemento(T0n,T,R,I).
 
 escrever_tarefas([],[]).
 escrever_tarefas([I|RTarefas], [Xi|RX]) :-
-    write(I:Xi), nl,
+    Minimum is get_min(Xi),
+    write(I:Minimum), nl,
     escrever_tarefas(RTarefas,RX).
 
