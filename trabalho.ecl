@@ -1,8 +1,9 @@
 :- lib(ic).
 :- lib(ic_global).
+:- lib(ic_edge_finder).
 :- lib(branch_and_bound).
 
-:- compile(ex2_1).
+:- compile(ex2_v).
 
 /*
 Para o Eclipse dar
@@ -21,20 +22,19 @@ run :- get_data(Tarefas,Precedencias,D,T).
 
 get_data(Tarefas,Precedencias,D,T) :-
     findall(T,tarefa(T,_,_,_),Tarefas),
-    findall(P,tarefa(_,P,_,_),Precedencias),
     findall(D,tarefa(_,_,D,_),Duracao),
     findall(W,tarefa(_,_,_,W),Trabalhadores),
     length(Tarefas,NTarefas), length(DatasInicio,NTarefas),
     duracao_total(Tarefas,MaxD),
-    write('Duração mínima do projeto: '), writeln(MaxD),
     writeln(''),
-    DatasInicio#::0..MaxD, Fim#::0..MaxD,
+    DatasInicio#::0..MaxD, Fim#::0..MaxD, Limit#::0..50,
     get_succ(Tarefas,DatasInicio,Fim),
-    minimize(labeling([Fim]),Fim),
+    cumulative(DatasInicio,Duracao,Trabalhadores,Limit),
+    minimize(labeling([Fim,Limit]),Fim),
     escrever_tarefas(Tarefas,DatasInicio),
     writeln(''),
-    max_workers(Tarefas,0).
-    
+    write('Número mínimo de trabalhadores: '),writeln(Limit).
+
 get_succ([],_,_).
 get_succ([T|RTarefas],Datas,Fim) :-
     tarefa(T,Segs,Di,_),
@@ -49,18 +49,21 @@ get_succ_([J|PSegs],Datas,DataI,Di) :-
     DataI+Di #=< DataJ,
     get_succ_(PSegs,Datas,DataI,Di).
 
-
 duracao_total([],0).
 duracao_total([T|RTarefas], Total) :-
     tarefa(T,_,Di,_), 
     duracao_total(RTarefas,Total_), Total is Total_ + Di.
 
-max_workers([],Max) :- write('Número mínimo de trabalhadores: '), writeln(Max).
-max_workers([T|RTarefas], Max) :-
-    tarefa(T,_,_,W),
-    Result is max(W,Max),
-    max_workers(RTarefas,Result).
-
+/*get_min_workers([],[],N,F) :- writeln(N:F).
+get_min_workers([I|RTarefas],[Xi|RX],N,F) :-
+    
+helper([I|RTarefas],[Xi|RX], T, W) :-
+    tarefa(I,_,D,Wk),
+    Result is D + Xi,
+    Result #=< T,
+    W is W + Wk,
+    helper(RTarefas,Rx,T,W).
+*/
 
 selec_elemento(T,T,[I|_],I) :- !.
 selec_elemento(T0,T,[_|R],I) :-  T0n is T0+1, selec_elemento(T0n,T,R,I).
