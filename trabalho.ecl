@@ -3,7 +3,7 @@
 :- lib(ic_edge_finder).
 :- lib(branch_and_bound).
 
-:- compile(ex2_1).
+:- compile(ex4).
 
 /*
 Para o Eclipse dar
@@ -11,9 +11,7 @@ export PATH=${PATH}:/home/unas/Aulas/TerceiroAno/Métodos\ de\ Apoio\ á\ Decis�
 */
 
 run :-
-    findall(T,tarefa(T,_,_,_),Tarefas),
-    findall(D,tarefa(_,_,D,_),Duracao),
-    findall(W,tarefa(_,_,_,W),Trabalhadores),
+    get_data(Tarefas,Duracao,Trabalhadores),
     length(Tarefas,NTarefas), length(DatasInicio,NTarefas),
     total_duration(Tarefas,MaxD),
     writeln(''),
@@ -26,11 +24,17 @@ run :-
     print_tasks(Tarefas,DatasInicio),
     cumulative(EStarts,Duracao,Trabalhadores,Limit_),
     writeln(''),
-    minimize(labeling([Fim,Limit]),Fim),
-    Limit_ is get_min(Limit_),
-    writeln(''),
+    get_min(Fim,Fim),
+    get_min(Limit,Limit),
+    get_min(Limit_,Limit_),
+    write('Earliest Finish Time: '), writeln(Fim),
     write('Número mínimo de trabalhadores com EST: '),writeln(Limit_),
     write('Número mínimo de trabalhadores: '),writeln(Limit).
+
+get_data(Tarefas,Duracao,Trabalhadores) :-
+    findall(T,tarefa(T,_,_,_),Tarefas),
+    findall(D,tarefa(_,_,D,_),Duracao),
+    findall(W,tarefa(_,_,_,W),Trabalhadores).
 
 get_es([],[]).
 get_es([Xi|RX],[Yi|RY]) :-
