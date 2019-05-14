@@ -3,74 +3,69 @@
 :- lib(ic_edge_finder).
 :- lib(branch_and_bound).
 
-:- compile(ex2_v).
+:- compile(ex2_1).
 
 /*
 Para o Eclipse dar
 export PATH=${PATH}:/home/unas/Aulas/TerceiroAno/Métodos\ de\ Apoio\ á\ Decisão/bin/x86_64_linux
 */
 
-/*
-TODO:
- - Aguentar quando 2 tarefas não têm precedentes?
-/*
-
-/* tarefa(ID,Precs,Duracao,Trabalhadores) - EclipseCPL
-   t(ID,Duracao,Precs) - SWIPL */
-
-run :- get_data(Tarefas,Precedencias,D,T).
-
-get_data(Tarefas,Precedencias,D,T) :-
+run :-
     findall(T,tarefa(T,_,_,_),Tarefas),
     findall(D,tarefa(_,_,D,_),Duracao),
     findall(W,tarefa(_,_,_,W),Trabalhadores),
     length(Tarefas,NTarefas), length(DatasInicio,NTarefas),
-    duracao_total(Tarefas,MaxD),
+    total_duration(Tarefas,MaxD),
     writeln(''),
-    DatasInicio#::0..MaxD, Fim#::0..MaxD, Limit#::0..50,
-    get_succ(Tarefas,DatasInicio,Fim),
+    max_workers(Trabalhadores,MaxW,0),
+    DatasInicio#::0..MaxD, Fim#::0..MaxD, Limit#::0..MaxW,
+    get_successors(Tarefas,DatasInicio,Fim),
     cumulative(DatasInicio,Duracao,Trabalhadores,Limit),
-    minimize(labeling([Fim,Limit]),Fim),
-    escrever_tarefas(Tarefas,DatasInicio),
+    get_es(DatasInicio,EStarts),
+    writeln('Earliest Start Times:'),
+    print_tasks(Tarefas,DatasInicio),
+    cumulative(EStarts,Duracao,Trabalhadores,Limit_),
     writeln(''),
+    minimize(labeling([Fim,Limit]),Fim),
+    Limit_ is get_min(Limit_),
+    writeln(''),
+    write('Número mínimo de trabalhadores com EST: '),writeln(Limit_),
     write('Número mínimo de trabalhadores: '),writeln(Limit).
 
-get_succ([],_,_).
-get_succ([T|RTarefas],Datas,Fim) :-
+get_es([],[]).
+get_es([Xi|RX],[Yi|RY]) :-
+    Yi is get_min(Xi),
+    get_es(RX,RY).
+
+get_successors([],_,_).
+get_successors([T|RTarefas],Datas,Fim) :-
     tarefa(T,Segs,Di,_),
-    selec_elemento(1,T,Datas,DataI),
-    get_succ_(Segs,Datas,DataI,Di),
+    select_element(1,T,Datas,DataI),
+    get_successors_(Segs,Datas,DataI,Di),
     DataI+Di #=< Fim,
-    get_succ(RTarefas,Datas,Fim).
+    get_successors(RTarefas,Datas,Fim).
 
-get_succ_([],_,_,_).
-get_succ_([J|PSegs],Datas,DataI,Di) :-
-    selec_elemento(1,J,Datas,DataJ),
+get_successors_([],_,_,_).
+get_successors_([J|PSegs],Datas,DataI,Di) :-
+    select_element(1,J,Datas,DataJ),
     DataI+Di #=< DataJ,
-    get_succ_(PSegs,Datas,DataI,Di).
+    get_successors_(PSegs,Datas,DataI,Di).
 
-duracao_total([],0).
-duracao_total([T|RTarefas], Total) :-
+total_duration([],0).
+total_duration([T|RTarefas], Total) :-
     tarefa(T,_,Di,_), 
-    duracao_total(RTarefas,Total_), Total is Total_ + Di.
+    total_duration(RTarefas,Total_), Total is Total_ + Di.
 
-/*get_min_workers([],[],N,F) :- writeln(N:F).
-get_min_workers([I|RTarefas],[Xi|RX],N,F) :-
-    
-helper([I|RTarefas],[Xi|RX], T, W) :-
-    tarefa(I,_,D,Wk),
-    Result is D + Xi,
-    Result #=< T,
-    W is W + Wk,
-    helper(RTarefas,Rx,T,W).
-*/
+select_element(T,T,[I|_],I) :- !.
+select_element(T0,T,[_|R],I) :-  T0n is T0+1, select_element(T0n,T,R,I).
 
-selec_elemento(T,T,[I|_],I) :- !.
-selec_elemento(T0,T,[_|R],I) :-  T0n is T0+1, selec_elemento(T0n,T,R,I).
+print_tasks([],[]).
+print_tasks([I|RTarefas], [Xi|RX]) :-
+    Min is get_min(Xi),
+    write('Tarefa':I), write(' EST':Min), nl,
+    print_tasks(RTarefas,RX).
 
-escrever_tarefas([],[]).
-escrever_tarefas([I|RTarefas], [Xi|RX]) :-
-    Minimum is get_min(Xi),
-    write(I:Minimum), nl,
-    escrever_tarefas(RTarefas,RX).
-
+max_workers([],MaxW,Adder):- MaxW is Adder.
+max_workers([T|RTrabs],MaxW,Adder) :-
+    Adder_ is Adder + T,
+    max_workers(RTrabs,MaxW,Adder_).
