@@ -3,7 +3,7 @@
 :- lib(ic_edge_finder).
 :- lib(branch_and_bound).
 
-:- compile(ex4).
+:- compile(ex1).
 
 /*
 Para o Eclipse dar
@@ -29,7 +29,11 @@ run :-
     get_min(Limit_,Limit_),
     write('Earliest Finish Time: '), writeln(Fim),
     write('Número mínimo de trabalhadores com EST: '),writeln(Limit_),
-    write('Número mínimo de trabalhadores: '),writeln(Limit).
+    write('Número mínimo de trabalhadores: '),writeln(Limit),
+    labeling(DatasInicio),
+    writeln(''),
+    writeln('Optimum Solution:'),
+    print_tasks_(Tarefas,DatasInicio).
 
 get_data(Tarefas,Duracao,Trabalhadores) :-
     findall(T,tarefa(T,_,_,_),Tarefas),
@@ -66,8 +70,13 @@ select_element(T0,T,[_|R],I) :-  T0n is T0+1, select_element(T0n,T,R,I).
 print_tasks([],[]).
 print_tasks([I|RTarefas], [Xi|RX]) :-
     Min is get_min(Xi),
-    write('Tarefa':I), write(' EST':Min), nl,
+    write('Task':I), write(' EST':Min), nl,
     print_tasks(RTarefas,RX).
+
+print_tasks_([],[]).
+print_tasks_([I|RTarefas], [Xi|RX]) :-
+    write('Task':I), write(' Start Time':Xi), nl,
+    print_tasks_(RTarefas,RX).
 
 max_workers([],MaxW,Adder):- MaxW is Adder.
 max_workers([T|RTrabs],MaxW,Adder) :-
