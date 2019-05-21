@@ -3,7 +3,7 @@
 :- lib(ic_edge_finder).
 :- lib(branch_and_bound).
 
-:- compile(largeB_Prolog).
+:- compile(largeA_Prolog).
 
 /*
 Para o Eclipse dar
@@ -11,59 +11,60 @@ export PATH=${PATH}:/home/unas/Aulas/TerceiroAno/Métodos\ de\ Apoio\ á\ Decis�
 */
 
 run(P) :-
-    get_data(Tarefas,Duracao,Trabalhadores),
-    length(Tarefas,NTarefas), length(DatasInicio,NTarefas),
-    total_duration(Tarefas,MaxD),
+    get_data(Tasks,Duration,Workers),
+    length(Tasks,NTasks), length(StartDates,NTasks),
+    total_duration(Tasks,MaxD),
     writeln(''),
-    max_workers(Trabalhadores,MaxW,0),
-    DatasInicio#::0..MaxD, Fim#::0..MaxD, Limit#::0..MaxW, Limit_#::0..MaxW,
-    (P = 1 -> get_early_finish(Tarefas,DatasInicio,Fim);
-    P = 2 -> min_es(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit_,Fim);
-    P = 3 -> get_critical_tasks(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit,Fim); 
-    P = 4 -> get_start_time(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit,Fim)).
+    max_workers(Workers,MaxW,0),
+    StartDates#::0..MaxD, EndTime#::0..MaxD, WorkerLimit#::0..MaxW, WorkerLimitEST#::0..MaxW,
+    (P = 1 -> get_early_finish(Tasks,StartDates,EndTime);
+    P = 2 -> min_es(Tasks,StartDates,Duration,Workers,WorkerLimitEST,EndTime);
+    P = 3 -> get_critical_tasks(Tasks,StartDates,Duration,Workers,WorkerLimit,EndTime); 
+    P = 4 -> get_start_time(Tasks,StartDates,Duration,Workers,WorkerLimit,EndTime)).
 
-get_early_finish(Tarefas,DatasInicio,Fim) :-
-    get_successors(Tarefas,DatasInicio,Fim),
-    get_es(DatasInicio),
-    get_min(Fim,Fim),
-    write('Earliest Finish Time: '),writeln(Fim).
+get_early_finish(Tasks,StartDates,EndTime) :-
+    get_successors(Tasks,StartDates,EndTime),
+    get_es(StartDates),
+    get_min(EndTime,EndTime),
+    write('Earliest Finish Time: '),writeln(EndTime).
 
-min_es(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit_,Fim) :-
-    get_successors(Tarefas,DatasInicio,Fim),
-    get_es(DatasInicio),
-    cumulative(DatasInicio,Duracao,Trabalhadores,Limit_),
-    get_min(Limit_,Limit_),
-    print_tasks_(Tarefas,DatasInicio),
+min_es(Tasks,StartDates,Duration,Workers,WorkerLimitEST,EndTime) :-
+    get_successors(Tasks,StartDates,EndTime),
+    get_es(StartDates),
+    cumulative(StartDates,Duration,Workers,WorkerLimitEST),
+    get_min(WorkerLimitEST,WorkerLimitEST),
+    print_tasks_(Tasks,StartDates),
     writeln(''),
-    write('Número mínimo de trabalhadores com EST: '),writeln(Limit_).
+    write('Minimum Workers on EST: '),writeln(WorkerLimitEST).
 
-get_start_time(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit,Fim) :-
-    get_successors(Tarefas,DatasInicio,Fim),
-    get_min(Fim,Fim),
-    cumulative(DatasInicio,Duracao,Trabalhadores,Limit),
-    minimize(labeling([Limit]),Limit),
-    write('Número mínimo de trabalhadores: '),writeln(Limit),
+get_start_time(Tasks,StartDates,Duration,Workers,WorkerLimit,EndTime) :-
+    get_successors(Tasks,StartDates,EndTime),
+    get_min(EndTime,EndTime),
+    cumulative(StartDates,Duration,Workers,WorkerLimit),
+    minimize(labeling([WorkerLimit]),WorkerLimit),
+    write('Minimum Workers: '),writeln(WorkerLimit),
     writeln(''),
-    labeling(DatasInicio),
+    labeling(StartDates),
     writeln('Optimal Solution:'),
-    print_tasks_(Tarefas,DatasInicio).
+    print_tasks_(Tasks,StartDates).
 
-get_critical_tasks(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit,Fim) :-
-    get_successors(Tarefas,DatasInicio,Fim),
-    get_min(Fim,Fim),
-    cumulative(DatasInicio,Duracao,Trabalhadores,Limit),
-    MaxW is get_max(Limit),
-    Limit__#::0..MaxW,
-    get_critical_n(DatasInicio,CriticalN,0),
+get_critical_tasks(Tasks,StartDates,Duration,Workers,WorkerLimit,EndTime) :-
+    get_successors(Tasks,StartDates,EndTime),
+    get_min(EndTime,EndTime),
+    cumulative(StartDates,Duration,Workers,WorkerLimit),
+    MaxW is get_max(WorkerLimit),
+    WorkerLimitCT#::0..MaxW,
+    get_critical_n(StartDates,CriticalN,0),
     length(CriticalTasks,CriticalN), length(CriticalStart,CriticalN), length(CriticalDuration,CriticalN), length(CriticalWorkers,CriticalN),
-    get_critical(Tarefas,DatasInicio,CriticalTasks, CriticalStart),
+    get_critical(Tasks,StartDates,CriticalTasks, CriticalStart),
+    writeln('Critcal Tasks:'),
     print_tasks_(CriticalTasks,CriticalStart),
     writeln(''),
     get_others(CriticalTasks,CriticalDuration,CriticalWorkers),
     labeling([CriticalStart,CriticalDuration,CriticalWorkers]),
-    cumulative(CriticalStart,CriticalDuration,CriticalWorkers,Limit__),
-    get_min(Limit__,Limit__),
-    writeln('Minimum workers for critical tasks':Limit__).
+    cumulative(CriticalStart,CriticalDuration,CriticalWorkers,WorkerLimitCT),
+    get_min(WorkerLimitCT,WorkerLimitCT),
+    writeln('Minimum workers on critical tasks':WorkerLimitCT).
 
 get_others([],[],[]).
 get_others([T|RT], [D|RD], [W|RW]) :-
@@ -85,10 +86,10 @@ get_critical([T|RT],[X|RX],[Y|RY], [Z|RZ]) :-
     Min is get_min(X),
     (Max = Min -> Y is T, Z is X, get_critical(RT,RX,RY,RZ); Max \= Min -> get_critical(RT,RX,[Y|RY],[Z|RZ])).
 
-get_data(Tarefas,Duracao,Trabalhadores) :-
-    findall(T,tarefa(T,_,_,_),Tarefas),
-    findall(D,tarefa(_,_,D,_),Duracao),
-    findall(W,tarefa(_,_,_,W),Trabalhadores).
+get_data(Tasks,Duration,Workers) :-
+    findall(T,tarefa(T,_,_,_),Tasks),
+    findall(D,tarefa(_,_,D,_),Duration),
+    findall(W,tarefa(_,_,_,W),Workers).
 
 get_es([]).
 get_es([Xi|RX]) :-
@@ -96,12 +97,12 @@ get_es([Xi|RX]) :-
     get_es(RX).
 
 get_successors([],_,_).
-get_successors([T|RTarefas],Datas,Fim) :-
+get_successors([T|RTasks],Datas,EndTime) :-
     tarefa(T,Segs,Di,_),
     select_element(1,T,Datas,DataI),
     get_successors_(Segs,Datas,DataI,Di),
-    DataI+Di #=< Fim,
-    get_successors(RTarefas,Datas,Fim).
+    DataI+Di #=< EndTime,
+    get_successors(RTasks,Datas,EndTime).
 
 get_successors_([],_,_,_).
 get_successors_([J|PSegs],Datas,DataI,Di) :-
@@ -110,23 +111,23 @@ get_successors_([J|PSegs],Datas,DataI,Di) :-
     get_successors_(PSegs,Datas,DataI,Di).
 
 total_duration([],0).
-total_duration([T|RTarefas], Total) :-
+total_duration([T|RTasks], Total) :-
     tarefa(T,_,Di,_), 
-    total_duration(RTarefas,Total_), Total is Total_ + Di.
+    total_duration(RTasks,Total_), Total is Total_ + Di.
 
 select_element(T,T,[I|_],I) :- !.
 select_element(T0,T,[_|R],I) :-  T0n is T0+1, select_element(T0n,T,R,I).
 
 print_tasks([],[]).
-print_tasks([I|RTarefas], [Xi|RX]) :-
+print_tasks([I|RTasks], [Xi|RX]) :-
     Min is get_min(Xi),
     write('Task':I), write(' EST':Min), nl,
-    print_tasks(RTarefas,RX).
+    print_tasks(RTasks,RX).
 
 print_tasks_([],[]).
-print_tasks_([I|RTarefas], [Xi|RX]) :-
+print_tasks_([I|RTasks], [Xi|RX]) :-
     write('Task':I), write(' Start Time':Xi), nl,
-    print_tasks_(RTarefas,RX).
+    print_tasks_(RTasks,RX).
 
 max_workers([],MaxW,Adder):- MaxW is Adder.
 max_workers([T|RTrabs],MaxW,Adder) :-
