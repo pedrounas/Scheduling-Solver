@@ -3,7 +3,7 @@
 :- lib(ic_edge_finder).
 :- lib(branch_and_bound).
 
-:- compile(ex3).
+:- compile(largeB_Prolog).
 
 /*
 Para o Eclipse dar
@@ -17,25 +17,16 @@ run(P) :-
     writeln(''),
     max_workers(Trabalhadores,MaxW,0),
     DatasInicio#::0..MaxD, Fim#::0..MaxD, Limit#::0..MaxW, Limit_#::0..MaxW,
-    (P = 1 -> min_es(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit_,Fim); P = 2 -> get_start_time(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit,Fim); true).
+    (P = 1 -> get_early_finish(Tarefas,DatasInicio,Fim);
+    P = 2 -> min_es(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit_,Fim);
+    P = 3 -> get_critical_tasks(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit,Fim); 
+    P = 4 -> get_start_time(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit,Fim)).
 
-    /*get_es(DatasInicio,EStarts),
-    writeln('Earliest Start Times:'),
-    print_tasks(Tarefas,DatasInicio),
-    cumulative(EStarts,Duracao,Trabalhadores,Limit_),
-    writeln(''),
+get_early_finish(Tarefas,DatasInicio,Fim) :-
+    get_successors(Tarefas,DatasInicio,Fim),
+    get_es(DatasInicio),
     get_min(Fim,Fim),
-    get_min(Limit,Limit),
-    get_min(Limit_,Limit_),
-    minimize(labeling([Fim,Limit,Limit_]),Fim),
-    write('Earliest Finish Time: '), writeln(Fim),
-    write('Número mínimo de trabalhadores com EST: '),writeln(Limit_),
-    write('Número mínimo de trabalhadores: '),writeln(Limit),
-    labeling(DatasInicio),
-    writeln(''),
-    writeln('Optimum Solution:'),
-    print_tasks_(Tarefas,DatasInicio).*/
- 
+    write('Earliest Finish Time: '),writeln(Fim).
 
 min_es(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit_,Fim) :-
     get_successors(Tarefas,DatasInicio,Fim),
@@ -48,22 +39,28 @@ min_es(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit_,Fim) :-
 
 get_start_time(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit,Fim) :-
     get_successors(Tarefas,DatasInicio,Fim),
+    get_min(Fim,Fim),
     cumulative(DatasInicio,Duracao,Trabalhadores,Limit),
-    minimize(labeling([Fim,Limit]),Fim),
-    labeling(DatasInicio),
-    print_tasks_(Tarefas,DatasInicio),
-    writeln(''),
+    minimize(labeling([Limit]),Limit),
     write('Número mínimo de trabalhadores: '),writeln(Limit),
     writeln(''),
-    get_critical_tasks(DatasInicio,Tarefas).
+    labeling(DatasInicio),
+    writeln('Optimal Solution:'),
+    print_tasks_(Tarefas,DatasInicio).
 
-get_critical_tasks(DatasInicio,Tarefas) :-
+get_critical_tasks(Tarefas,DatasInicio,Duracao,Trabalhadores,Limit,Fim) :-
+    get_successors(Tarefas,DatasInicio,Fim),
+    get_min(Fim,Fim),
+    cumulative(DatasInicio,Duracao,Trabalhadores,Limit),
+    MaxW is get_max(Limit),
+    Limit__#::0..MaxW,
     get_critical_n(DatasInicio,CriticalN,0),
     length(CriticalTasks,CriticalN), length(CriticalStart,CriticalN), length(CriticalDuration,CriticalN), length(CriticalWorkers,CriticalN),
     get_critical(Tarefas,DatasInicio,CriticalTasks, CriticalStart),
-    (foreach(X,CriticalTasks), foreach(Y,CriticalStart) do writeln('Critical Task':X:Y)),
+    print_tasks_(CriticalTasks,CriticalStart),
     writeln(''),
     get_others(CriticalTasks,CriticalDuration,CriticalWorkers),
+    labeling([CriticalStart,CriticalDuration,CriticalWorkers]),
     cumulative(CriticalStart,CriticalDuration,CriticalWorkers,Limit__),
     get_min(Limit__,Limit__),
     writeln('Minimum workers for critical tasks':Limit__).
