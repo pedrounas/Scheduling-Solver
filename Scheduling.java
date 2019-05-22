@@ -31,13 +31,25 @@ public class Scheduling{
         int maxWorkersCrit = getMaxWorkers(nodeList, true);
         System.out.println("Workers for crit path is: " + maxWorkersCrit);
         LinkedList<SNode> bestList = getOptimizeValue(nodeList, maxWorkers);
-        System.out.println("menor numero de trabalhadores otimizado é" + min + "e a sua lista é");
-        printList(bestList);
+        bestList = addCritPath(nodeList, bestList);
+        //System.out.println("menor numero de trabalhadores otimizado é " + min + " e a sua lista é");
+        min = getMaxWorkers(bestList, false);
         if(alternateSolutions>0) System.out.println("Existem soluções alternativas");
         else System.out.println("Não existem soluções alternativas");
+        System.out.println("menor numero de trabalhadores otimizado é " + min + " e a sua lista é");
+        System.out.println();
+        printList(bestList);
+    }
 
-
-
+    private static LinkedList<SNode> addCritPath(LinkedList<SNode> nodeList, LinkedList<SNode> bestList) {
+        SNode cur;
+        for(int i=0; i<nodeList.size(); i++){
+            cur = nodeList.get(i);
+            if(cur.isCritTask()){
+                bestList.addLast(cur);
+            }
+        }
+        return bestList;
     }
 
     private static int getMaxFinish(LinkedList<SNode> nodeList) {
@@ -45,8 +57,8 @@ public class Scheduling{
         int max= 0;
         for(int i=0; i<nodeList.size(); i++){
             cur = nodeList.get(i);
-            if(cur.getEFinish()>max)
-                max = cur.getEFinish();
+            if(cur.getLFinish()>max)
+                max = cur.getLFinish();
         }
         return max;
     }
@@ -85,6 +97,7 @@ public class Scheduling{
         if(pq.isEmpty()){
             int max = getMaxWorkers(testList, false);
             if (max>min){
+                alternateSolutions=0;
                 return bestList;
             }
             else if(max == min){
@@ -99,7 +112,6 @@ public class Scheduling{
             int availableStartDay = getStartDay(testList, atual);
             atual.setCurStart(availableStartDay);
             while (atual.getCurStart() < atual.getLStart()) {
-
                 testList.add(atual);
                 bestList = expandPriorityQueue(pq, testList, bestList);
                 testList.remove(atual);
@@ -147,7 +159,7 @@ public class Scheduling{
               cur = nodeList.get(i);
               if(considerOnlyCritPath && !cur.isCritTask())
                   continue;
-              for(int j = cur.getEStart(); j<cur.getEFinish(); j++){
+              for(int j = cur.getCurStart(); j<cur.getCurStart()+cur.getDuration(); j++){
                   time[j] = time[j]+cur.getNrTrab();
               }
         }
@@ -165,7 +177,7 @@ public class Scheduling{
     }
 
     public static LinkedList<SNode> readData() throws IOException{
-        BufferedReader reader = new BufferedReader(new FileReader("data.txt"));
+        BufferedReader reader = new BufferedReader(new FileReader("dataAnswer.txt"));
         LinkedList<SNode> nodeList = new LinkedList<SNode>();
         String line=null;
         String[] parts;
