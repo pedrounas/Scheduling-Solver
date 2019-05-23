@@ -3,7 +3,7 @@
 :- lib(ic_edge_finder).
 :- lib(branch_and_bound).
 
-:- compile(ex4).
+:- compile(ex7).
 
 /*
 Para o Eclipse dar

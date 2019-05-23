@@ -3,7 +3,7 @@
 :- lib(ic_edge_finder).
 :- lib(branch_and_bound).
 
-:- compile(p2_ex1).
+:- compile(p2_ex2).
 
 run :-
     get_data(Tasks,Deadline),
@@ -11,11 +11,13 @@ run :-
     total_duration(Tasks,MaxD),
     writeln(''),
     get_deadline(Deadline,DDay,DMonth),
-    StartDates#::0..MaxD, EndTime#::0..MaxD,
+    StartDates#::[8..11,13..MaxD], EndTime#::[8..11,13..MaxD],
     get_successors(Tasks,StartDates,EndTime),
+    get_es(StartDates),
     sorted(Tasks,OrderedTasks),
     writeln('Deadline':DDay/DMonth),
-    print_tasks_(OrderedTasks,StartDates,1,0).
+    print_tasks_(OrderedTasks,StartDates,1,8),
+    writeln('').
 
 get_successors([],_,_).
 get_successors([T|RTasks],Datas,EndTime) :-
@@ -31,6 +33,11 @@ get_successors_([J|PSegs],Datas,DataI,Di) :-
     DataI+Di #=< DataJ,
     get_successors_(PSegs,Datas,DataI,Di).
 
+get_es([]).
+get_es([Xi|RX]) :-
+    get_min(Xi,Xi),
+    get_es(RX).
+
 get_data(Tasks,Deadline) :-
     findall(T,tarefa(T,_,_,_,0),Tasks),
     findall(De,prazo(De),Deadline).
@@ -42,29 +49,27 @@ total_duration([T|RTasks], Total) :-
 
 print_tasks_([],[],_,_).
 print_tasks_([I|RTasks], [Xi|RX], CurrDay, CurrTime) :-
-    Min is get_min(Xi),
     tarefa(I,_,D,_,_),
-    (Min + D > 8 * CurrDay -> CurrDay_ is CurrDay + 1, Flag is 1; Min + D =< 8 * CurrDay -> CurrDay_ is CurrDay, Flag is 0),
-    (Min = 0 -> print_first(I,Min,CurrTime); Flag is 1 -> print_others(I,0,CurrDay_,CurrTime); print_others(I,Min,CurrDay_,CurrTime)),
+    (Xi + D > 17 * CurrDay -> CurrDay_ is CurrDay + 1, Flag is 1; 
+    Xi + D =< 17 * CurrDay -> CurrDay_ is CurrDay, Flag is 0),
+    (Xi = 8 -> print_first(I,Xi); Flag is 1 -> print_others(I,CurrDay_,CurrTime); print_others(I,CurrDay_,Xi)),
     print_tasks_(RTasks,RX, CurrDay_, CurrTime).
 
-print_first(I,Start,CurrTime) :-
+print_first(I,Start) :-
     calendario(Calen),
     find_days(Calen,Days),
     find_months(Calen,Months),
     element(1,Days,D),
     element(1,Months,M),
-    Hour is Start + 8,
-    write('Task':I), write(' Start Date':D/M), write(' at':Hour), nl.
+    write('Task':I), write(' Start Date':D/M), write(' at':Start), nl.
 
-print_others(I,Start,CurrDay,CurrTime) :-
+print_others(I,CurrDay,CurrTime) :-
     calendario(Calen),
     find_days(Calen,Days),
     find_months(Calen,Months),
     element(CurrDay,Days,D),
     element(CurrDay,Months,M),
-    Hour is Start + 8,
-    write('Task':I), write(' Start Date':D/M), write(' at':Hour), nl.
+    write('Task':I), write(' Start Date':D/M), write(' at':CurrTime), nl.
 
 get_deadline(D,Dd,Dm) :-
     find_days(D,Aux),
