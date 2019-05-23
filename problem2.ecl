@@ -3,7 +3,7 @@
 :- lib(ic_edge_finder).
 :- lib(branch_and_bound).
 
-:- compile(p2_ex2).
+:- compile(p2_ex1).
 
 run :-
     get_data(Tasks,Deadline),
@@ -16,8 +16,7 @@ run :-
     get_es(StartDates),
     sorted(Tasks,OrderedTasks),
     writeln('Deadline':DDay/DMonth),
-    print_tasks_(OrderedTasks,StartDates,1,8),
-    writeln('').
+    print_tasks_(OrderedTasks,StartDates,1).
 
 get_successors([],_,_).
 get_successors([T|RTasks],Datas,EndTime) :-
@@ -48,12 +47,12 @@ total_duration([T|RTasks], Total) :-
     total_duration(RTasks,Total_), Total is Total_ + Di.
 
 print_tasks_([],[],_,_).
-print_tasks_([I|RTasks], [Xi|RX], CurrDay, CurrTime) :-
+print_tasks_([I|RTasks], [Xi|RX], CurrDay) :-
     tarefa(I,_,D,_,_),
     (Xi + D > 17 * CurrDay -> CurrDay_ is CurrDay + 1, Flag is 1; 
-    Xi + D =< 17 * CurrDay -> CurrDay_ is CurrDay, Flag is 0),
-    (Xi = 8 -> print_first(I,Xi); Flag is 1 -> print_others(I,CurrDay_,CurrTime); print_others(I,CurrDay_,Xi)),
-    print_tasks_(RTasks,RX, CurrDay_, CurrTime).
+    Xi + D =< 17 * CurrDay -> CurrDay_ is CurrDay,Flag is 0),
+    (Xi = 8 -> print_first(I,Xi); Flag is 1 -> print_others(I,CurrDay_,8); print_others(I,CurrDay_,Xi)),
+    print_tasks_(RTasks,RX, CurrDay_).
 
 print_first(I,Start) :-
     calendario(Calen),
