@@ -11,9 +11,8 @@ public class Scheduling{
             nodeList = readData();
         }
         catch(IOException e){}
-       // printList(nodeList);
-        nodeList = runList(nodeList);
         printList(nodeList);
+        nodeList = runList(nodeList);
 
          analyseList(nodeList);
     }
@@ -57,9 +56,10 @@ public class Scheduling{
         int max= 0;
         for(int i=0; i<nodeList.size(); i++){
             cur = nodeList.get(i);
-            if(cur.getLFinish()>max)
-                max = cur.getLFinish();
+            if(cur.getEFinish()>max)
+                max = cur.getEFinish();
         }
+        SNode.maxDuration = max;
         return max;
     }
 
@@ -153,7 +153,7 @@ public class Scheduling{
 
     private static int getMaxWorkers(LinkedList<SNode> nodeList, Boolean considerOnlyCritPath) {
         SNode cur;
-        int maxTime = getMaxFinish(nodeList);
+        int maxTime = SNode.maxDuration;
         int[] time = new int[maxTime+1];
         for (int i=0; i<nodeList.size(); i++){
               cur = nodeList.get(i);
@@ -177,8 +177,9 @@ public class Scheduling{
     }
 
     public static LinkedList<SNode> readData() throws IOException{
-        BufferedReader reader = new BufferedReader(new FileReader("dataAnswer.txt"));
+        BufferedReader reader = new BufferedReader(new FileReader("data.txt"));
         LinkedList<SNode> nodeList = new LinkedList<SNode>();
+        HashMap<Integer, Integer> hmAll = new HashMap<Integer, Integer>(30);
         String line=null;
         String[] parts;
         int starterFlag=0;
@@ -192,13 +193,9 @@ public class Scheduling{
             nodeNR = Integer.parseInt(parts[0]);
             //System.out.println(Integer.parseInt(parts[size]));
             HashMap<Integer,Boolean> hm = new HashMap<Integer,Boolean>(6);
-            if(nrPrec==0){
-                hm.put(0, false);
-                starterFlag=1;
-            }
             for(int i=0; i<nrPrec; i++){
-                    hm.put(Integer.parseInt(parts[i+2]), true);
-                }
+                    hmAll.put(nodeNR,Integer.parseInt(parts[i+2]));
+            }
             duracao = Integer.parseInt(parts[size-2]);
             nrTrab =Integer.parseInt(parts[size-1]);
             SNode node = new SNode(nodeNR, hm, duracao, nrTrab);
@@ -208,7 +205,33 @@ public class Scheduling{
             }
             nodeList.addLast(node);
         }
+        addPrecedentsFromDescendants(nodeList, hmAll);
         return nodeList;
+    }
+
+    private static void addPrecedentsFromDescendants(LinkedList<SNode> nodeList, HashMap<Integer, Integer> hmAll) {
+        SNode cur;
+        HashMap<Integer,Boolean> precedences;
+        for (int i=0;i<nodeList.size();i++){
+            cur = nodeList.get(i);
+            for (Map.Entry<Integer, Integer> entry : hmAll.entrySet()) {
+                if(entry.getValue()==cur.getNodeNR()){
+                    cur.getPrecedences().put(entry.getKey(), true);
+                }
+            }
+        }
+        int test = 0;
+        for (int i=0;i<nodeList.size();i++) {
+            cur = nodeList.get(i);
+            for (Map.Entry<Integer, Boolean> entry : cur.precedences.entrySet()) {
+                test = 1;
+            }
+            if (test==0){
+                cur.precedences.put(0,false);
+                cur.addSetEFinish();
+            }
+            test = 0;
+        }
     }
 
     public static LinkedList<SNode> runList(LinkedList<SNode> nodeList){
@@ -247,10 +270,11 @@ public class Scheduling{
     private static LinkedList<SNode> getGrau0(int[] grauS, LinkedList<SNode> nodeList) {
         LinkedList<SNode> queue = new LinkedList<>();
         SNode cur = null;
+        int max = getMaxFinish(nodeList);
         for(int i=0; i<grauS.length;i++){
             if(grauS[i]==0){
                 cur = nodeList.get(i);
-                cur.setLFinish(cur.getEFinish());
+                cur.setLFinish(max);
                 cur.setLStart();
                 queue.add(cur);
             }
