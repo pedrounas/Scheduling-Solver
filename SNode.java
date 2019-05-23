@@ -13,8 +13,7 @@ public class SNode{
     boolean visited;
     HashMap<Integer,Boolean> precedences;
     int curStart;
-    static int TrabES;//necessary workers for earliest start
-    static int TrabCT;//" " critical tasks
+    static int maxDuration;
 
 
     public SNode(int nodeNR, int EStart, int EFinish, int LStart, int LFinish, int duration, int nrTrab, boolean critTask, boolean visited, HashMap<Integer, Boolean> precedences, int curStart) {
@@ -123,7 +122,10 @@ public class SNode{
         System.out.println();
         System.out.println("EStart = " + this.EStart +" EFinish =" + this.EFinish);
         System.out.println("LStart = " + this.LStart +" LFinish =" + this.LFinish);
-        System.out.println("curStart = " + this.curStart);
+        if(isCritTask()){
+            System.out.println("Is Crit Task");
+        }
+        System.out.println("optimizedStart = " + this.curStart);
         System.out.println();
     }
 
